@@ -8,13 +8,17 @@ import net.minecraft.network.chat.Component
 import net.minecraft.server.MinecraftServer
 import net.minecraft.world.level.storage.LevelResource
 import org.slf4j.LoggerFactory
-import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.absolute
+import kotlin.io.path.deleteIfExists
+import kotlin.io.path.name
+import kotlin.io.path.outputStream
 
 object StarlightPreserved : ModInitializer {
     private val logger = LoggerFactory.getLogger("StarlightPreserved")
@@ -47,13 +51,13 @@ object StarlightPreserved : ModInitializer {
         server.isAutoSave = false
         server.saveEverything(false, true, true)
         val worldDir = server.getWorldPath(LevelResource.ROOT).absolute().normalize()
-        val backupDir = worldDir.parent.resolve("backups").toFile()
-        val outFile = File(backupDir, "backup-$timestamp.zip")
+        val backupDir = worldDir.parent.resolve("backups")
+        val outFile = backupDir.resolve("backup-$timestamp.zip")
         logger.info(backupDir.toString())
         Thread {
             try {
                 broadcastInfo("Starting backup...")
-                zipDirectory(worldDir.toFile(), outFile)
+                zipDirectory(worldDir, outFile)
                 server.execute {
                     noSaveStates.forEach { (level, noSave) ->
                         level.noSave = noSave
@@ -62,7 +66,7 @@ object StarlightPreserved : ModInitializer {
                 }
             } catch (e: Exception) {
                 broadcastError("Backup failed: ${e.message}")
-                outFile.delete()
+                outFile.deleteIfExists()
             } finally {
                 lastBackupTimeMs = System.currentTimeMillis()
                 isBackupInProgress.set(false)
@@ -70,15 +74,14 @@ object StarlightPreserved : ModInitializer {
         }.also { it.isDaemon = false }.start()
     }
 
-    private fun zipDirectory(worldDir: File, outDir: File) {
-        outDir.parentFile.mkdirs()
+    private fun zipDirectory(worldDir: Path, outDir: Path) {
+        Files.createDirectories(worldDir)
         ZipOutputStream(outDir.outputStream().buffered()).use { stream ->
-            val sourcePath = worldDir.toPath()
-            worldDir.walkTopDown().forEach { file ->
+            worldDir.toFile().walkTopDown().forEach { file ->
                 if (file.name == "session.lock"
                     || !file.isFile
                 ) return@forEach
-                val entryName = sourcePath.relativize(file.toPath()).toString()
+                val entryName = worldDir.relativize(file.toPath()).toString()
                 stream.putNextEntry(ZipEntry(entryName))
                 file.inputStream().use { it.copyTo(stream) }
                 stream.closeEntry()
