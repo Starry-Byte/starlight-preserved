@@ -1,0 +1,21 @@
+# ================================
+#      Starlight Preserved
+# ================================
+
+# How often to back up the world, in minutes
+backup_interval_minutes = 30
+
+# Maximum number of backups to keep before deleting the oldest
+# Set to 0 to keep all backups
+max_backups = 10
+
+# Name of the folder backups are saved into, relative to the world directory
+backup_dir_name = "backups"
+
+# Whether to notify online players when a backup starts and completes
+notify_players = true
+
+# How backup notifications are displayed to online players
+# CHAT       = persistent message in chat
+# ACTION_BAR = fades away above the hotbar
+notification_mode = "CHAT"

@@ -47,6 +47,7 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
 	implementation("net.fabricmc:fabric-language-kotlin:${providers.gradleProperty("fabric_kotlin_version").get()}")
+	implementation("org.tomlj:tomlj:1.1.1")
 	//implementation("at.yawk.lz4:lz4-java:1.10.4")
 }
 
